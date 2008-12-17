@@ -68,13 +68,13 @@ class Core:
                 self.Player.goLeft()
             if self.player_move == 3:
                 self.Player.goUp()
-        self.Player.update()
         self.Bomb.update()
+        self.Player.update()
     
     def Draws (self):
-        self.Player.sprite.draw(self.core.screen)
         if self.Bomb.placed:
             self.Bomb.sprite.draw(self.core.screen)
+        self.Player.sprite.draw(self.core.screen)
             
     def OnKeyDown (self, event):
         key = event.key

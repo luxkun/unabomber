@@ -61,7 +61,7 @@ class Core:
         
     def run (self):
         update_text = True
-        self.background = pygame.transform.scale(pygame.image.load("pixmaps/background.png").convert_alpha(), self.res)
+        self.background = pygame.transform.scale(pygame.image.load("sprites/background.png").convert_alpha(), self.res)
         self.redraw()
         pygame.display.flip()
         while self.running == True:
