@@ -23,10 +23,10 @@ spaces = 20
 
 class Core:
     rects = {}
-    def __init__ (self, core, res, scale):
+    def __init__ (self, core, res, xscale,yscale,scale):
         self.core = core
         self.res = res
-        self.scale = scale
+        self.xscale,self.yscale,self.scale = xscale,yscale,scale
         
         self.CreateRects(spaces, spaces)
         self.Player = player.PlayerSprite(self, *self.vpos2pixel(0,0))

@@ -29,8 +29,8 @@ class Core:
         self.res = res
         if not self.res:
             self.res = self.def_res
-        self.xscale = self.res[0]/self.def_res[0]
-        self.yscale = self.res[1]/self.def_res[1]
+        self.xscale = float(self.res[0])/self.def_res[0]
+        self.yscale = float(self.res[1])/self.def_res[1]
         self.scale = min(self.xscale, self.yscale)
         
         pygame.init()
@@ -57,7 +57,7 @@ class Core:
         self.StartLevel(level)
         
     def StartLevel (self, level):
-        self.playground = playground.Core(self, self.res, self.scale)
+        self.playground = playground.Core(self, self.res, self.xscale,self.yscale,self.scale)
         
     def run (self):
         update_text = True

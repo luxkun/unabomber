@@ -21,7 +21,7 @@ import main as Main
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr:v", ["help", "res="])
+        opts, args = getopt.getopt(sys.argv[1:], "hr::v", ["help", "res="])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -35,7 +35,7 @@ def main():
             usage()
             sys.exit()
         elif o in ("-r", "--res"):
-            res = a
+            res = tuple(map(lambda x: int(x), a.split("x")))
         else:
             assert False, "unhandled option"
     

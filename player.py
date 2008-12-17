@@ -24,7 +24,7 @@ class AnimatedSprite (pygame.sprite.Sprite):
         self.core = core
         self.speed = 2*self.core.scale
         
-        self.delay, self._frames = load_gif(image)
+        self.delay, self._frames = load_gif(image, self.core.xscale,self.core.yscale)
         self.frames = [self._frames[:4], self._frames[4:8], self._frames[8:12], self._frames[12:16]] #giu destra sinistra sopra
         self.sprite = pygame.sprite.RenderPlain(self)
         
