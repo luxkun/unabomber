@@ -19,7 +19,10 @@ import getopt
 
 import main as Main
 
-def main():
+def usage ():
+    print """ """
+
+def main ():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hr::v", ["help", "res="])
     except getopt.GetoptError, err:

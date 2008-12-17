@@ -23,11 +23,14 @@ def _to_pygame_image(pil_image, palette):
     new_image.blit(image, (x0, y0), (x0, y0, x1 - x0, y1 - y0))
     return new_image
 
-def load_gif(image_filename, xscale=1,yscale=1):
+def load_gif(image_filename, xscale=1,yscale=1, size=None):
     image = Image.open(image_filename)
     palette = _triplets(image.getpalette())
     images = []
-    scaled_size = (int(image.size[0]/xscale), int(image.size[1]/yscale))
+    if not size:
+        scaled_size = (int(image.size[0]*xscale), int(image.size[1]*yscale))
+    else:
+        scaled_size = size
     try:
         while 1:
             images.append(pygame.transform.scale(_to_pygame_image(image, palette), scaled_size))

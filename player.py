@@ -19,82 +19,88 @@ import pygame
 from pil import *
 
 class AnimatedSprite (pygame.sprite.Sprite):
-    def __init__(self, core, x,y, image):
+    justPlanted = False
+    moving = False
+    def __init__(self, core, vpos, image):
         pygame.sprite.Sprite.__init__(self)
         self.core = core
         self.speed = 2*self.core.scale
         
-        self.delay, self._frames = load_gif(image, self.core.xscale,self.core.yscale)
+        self.delay, self._frames = load_gif(image, size=(self.core.xSpaceSize,self.core.ySpaceSize))
         self.frames = [self._frames[:4], self._frames[4:8], self._frames[8:12], self._frames[12:16]] #giu destra sinistra sopra
         self.sprite = pygame.sprite.RenderPlain(self)
         
-        self.moveto = [0,0]
         self.frame = [0,0]
         self.image = self.frames[0][0]
         
-        self.rect = self.image.get_rect().move((x,y))
+        self.rect = self.image.get_rect()
+        self.DirectMove(vpos)
         self.clock = pygame.time.Clock()
         self.time = 0
-        
-    def GetPos (self, rect=None):
-        if not rect:
-            rect = self.rect
-        a,b = rect.topleft,rect.bottomright
-        x = ((b[0]-a[0])/2)+a[0]
-        y = ((b[1]-a[1])/2)+a[1]
-        return x,y
-    def GetVirtualPos (self, rect=None):
-        return self.core.pixel2vpos(*self.GetPos(rect))
+    
+    def DirectMove (self, vpos):
+        self.moving = False
+        self.vpos = self.fut_vpos = vpos
+        self.rect = self.rect.fit(self.core.rects[vpos][1])
+    
+    def CollideDetector (self, fut_vpos):
+        return any(((self.core.Bomb.vpos == fut_vpos), (fut_vpos not in self.core.rects)))
+    def TryToMove (self, fut_vpos):
+        if not self.CollideDetector(fut_vpos):
+            self.moving = True
+            self.fut_vpos = fut_vpos
+        else:
+            self.load_frame()
         
     def goDown (self):
         self.frame[0] = 0
-        self.moveto[1] = self.core.SpaceSize
+        fut_vpos = (self.vpos[0],self.vpos[1]+1)
+        self.TryToMove(fut_vpos)
     def goRight (self):
         self.frame[0] = 1
-        self.moveto[0] = self.core.SpaceSize
+        fut_vpos = (self.vpos[0]+1,self.vpos[1])
+        self.TryToMove(fut_vpos)
     def goLeft (self):
         self.frame[0] = 2
-        self.moveto[0] = -self.core.SpaceSize
+        fut_vpos = (self.vpos[0]-1,self.vpos[1])
+        self.TryToMove(fut_vpos)
     def goUp (self):
         self.frame[0] = 3
-        self.moveto[1] = -self.core.SpaceSize
+        fut_vpos = (self.vpos[0],self.vpos[1]-1)
+        self.TryToMove(fut_vpos)
+    
+    def load_frame (self):
+        self.image = self.frames[self.frame[0]][self.frame[1]]
+        self.rect = self.image.get_rect().move(self.rect.topleft)
+        self.colorkey = self.image.get_at((0,self.image.get_height()-1))
+        self.image.set_colorkey(self.colorkey)
 
     def update (self):
-        if any(self.moveto):
-            self.time += self.clock.tick()
-            if self.time >= self.delay:
-                self.time = 0
-                self.frame[1] += 1
-                if self.frame[1] >= len(self.frames[self.frame[0]]):
-                    self.frame[1] = 0
-                self.image = self.frames[self.frame[0]][self.frame[1]]
-                self.rect = self.image.get_rect().move(self.rect.topleft)
-                self.colorkey = self.image.get_at((0,self.image.get_height()-1))
-                self.image.set_colorkey(self.colorkey)
-                
-            moveto = [0,0]
-            for count,mt in enumerate(self.moveto):
-                if mt < 0:
-                    self.moveto[count] += self.speed
-                    if self.moveto[count] > 0:
-                        self.moveto[count] = 0
-                    moveto[count] = -self.speed
-                elif mt > 0:
-                    self.moveto[count] -= self.speed
-                    if self.moveto[count] < 0:
-                        self.moveto[count] = 0
-                    moveto[count] = self.speed
+        if self.fut_vpos != self.vpos:
+            if self.rect.contains(self.core.rects[self.fut_vpos][1]):
+                self.DirectMove(self.fut_vpos)
+            else:
+                self.time += self.clock.tick()
+                if self.time >= self.delay:
+                    self.time = 0
+                    self.frame[1] += 1
+                    if self.frame[1] >= len(self.frames[self.frame[0]]):
+                        self.frame[1] = 0
+                    self.load_frame()
                     
-            if any(moveto):
-                newrect = self.rect.move(moveto)
-                collidepoints = (newrect.topright,newrect.topleft,newrect.bottomright,newrect.bottomleft)
-                collide = all(map(lambda p: self.core.playingarea.collidepoint(p), collidepoints))
-                #bombcollide = (self.GetVirtualPos(newrect) != self.core.Bomb.GetVirtualPos())
-                bombcollide = True
-                if collide and bombcollide:
-                    self.rect = newrect
+                movetox,movetoy = 0,0
+                if self.fut_vpos[1] > self.vpos[1]: #sotto
+                    movetoy += self.speed
+                elif self.fut_vpos[0] > self.vpos[0]: #destra
+                    movetox += self.speed
+                elif self.fut_vpos[0] < self.vpos[0]: #sinistra
+                    movetox -= self.speed
+                elif self.fut_vpos[1] < self.vpos[1]: #sotto
+                    movetoy -= self.speed
+                self.rect = self.rect.move((movetox,movetoy))
+                
         pygame.event.pump()
         
 
-def PlayerSprite (core, x,y):
-    return AnimatedSprite(core, x,y, "sprites/player/red/animplayer.gif")
+def PlayerSprite (core, vpos):
+    return AnimatedSprite(core, vpos, "sprites/player/red/animplayer.gif")

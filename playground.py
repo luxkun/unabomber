@@ -19,8 +19,6 @@ import pygame
 import player
 import bomb
 
-spaces = 20
-
 class Core:
     rects = {}
     def __init__ (self, core, res, xscale,yscale,scale):
@@ -28,29 +26,30 @@ class Core:
         self.res = res
         self.xscale,self.yscale,self.scale = xscale,yscale,scale
         
-        self.CreateRects(spaces, spaces)
-        self.Player = player.PlayerSprite(self, *self.vpos2pixel(0,0))
+        self.CreateRects(20, 13)
+        self.Player = player.PlayerSprite(self, (0,0))
         self.Bomb = bomb.BombSprite(self)
         self.player_move = -1
+        self.box = pygame.transform.scale(pygame.image.load("sprites/testbox.gif"), (self.xSpaceSize,self.ySpaceSize))
         
         self.playingarea = pygame.Rect([0,0] + list(res))
         
     def CreateRects (self, xspaces, yspaces):
-        self.SpaceSize = min(int(self.res[0]/xspaces), int(self.res[1]/yspaces))
+        self.xSpaceSize, self.ySpaceSize = self.res[0]/xspaces, self.res[1]/yspaces
         for xs in xrange(xspaces):
             for ys in xrange(yspaces):
-                area = (xs*self.SpaceSize, ys*self.SpaceSize, self.SpaceSize, self.SpaceSize)
-                print area
-                self.rects[(xs, ys)] = (area, pygame.Rect(area))
+                area = (xs*self.xSpaceSize, ys*self.ySpaceSize, self.xSpaceSize, self.ySpaceSize)
+                rect = pygame.Rect(area)
+                self.rects[(xs, ys)] = (area, rect)
         
     def pixel2rect (self, x,y):
         for rect in self.rects:
             if rect.collidepoint(x) and rect.collidepoint(y):
                 return rect
     def vpos2pixel (self, xs, ys):
-        return (xs*self.SpaceSize, ys*self.SpaceSize)
+        return (xs*self.xSpaceSize+(self.xSpaceSize/2), ys*self.ySpaceSize+(self.ySpaceSize/2))
     def pixel2vpos (self, x, y):
-        return (int(x/self.SpaceSize), int(y/self.SpaceSize))
+        return (x/self.xSpaceSize, y/self.ySpaceSize)
             
     def GetRects (self):
         rects = [self.Player.rect]
@@ -59,7 +58,7 @@ class Core:
         return rects
     
     def Updates (self):
-        if (self.player_move != -1) and not any(self.Player.moveto):
+        if (self.player_move != -1) and (not self.Player.moving):
             if self.player_move == 0:
                 self.Player.goDown()
             if self.player_move == 1:
@@ -68,10 +67,15 @@ class Core:
                 self.Player.goLeft()
             if self.player_move == 3:
                 self.Player.goUp()
+        elif (self.player_move == -1) and (not self.Player.moving) and (self.Player.frame[1]):
+            self.Player.frame[1] = 0
+            self.Player.load_frame()
         self.Bomb.update()
         self.Player.update()
     
     def Draws (self):
+        for rect in self.rects.values():
+            self.core.screen.blit(self.box, rect[1])
         if self.Bomb.placed:
             self.Bomb.sprite.draw(self.core.screen)
         self.Player.sprite.draw(self.core.screen)
@@ -98,7 +102,8 @@ class Core:
             self.player_move = -1
         elif key == pygame.K_SPACE:
             if not self.Bomb.placed:
-                self.Bomb.Place(*self.Player.GetPos())
+                self.Player.justPlanted = True
+                self.Bomb.Place(self.Player.vpos)
     
     def OnDelayEvent (self, event):
         pass

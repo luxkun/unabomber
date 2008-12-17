@@ -20,6 +20,7 @@ from pil import *
 
 class AnimatedSprite (pygame.sprite.Sprite):
     placed = False
+    vpos = None
     def __init__(self, core, image):
         pygame.sprite.Sprite.__init__(self)
         self.core = core
@@ -28,30 +29,18 @@ class AnimatedSprite (pygame.sprite.Sprite):
         self.delay, self.frames = load_gif(image, self.core.xscale,self.core.yscale)
         self.frames = load_gif(image)[1]
         self.sprite = pygame.sprite.RenderPlain(self)
-        
-    def GetPos (self, rect=None):
-        if self.placed:
-            if not rect:
-                rect = self.rect
-            a,b = rect.topleft,rect.bottomright
-            x = ((b[0]-a[0])/2)+a[0]
-            y = ((b[1]-a[1])/2)+a[1]
-            print x,y, a,b
-            return x,y
-    def GetVirtualPos (self, rect=None):
-        if self.placed:
-            return self.core.pixel2vpos(*self.GetPos(rect))
 
-    def Place (self, x,y):
+    def DirectMove (self, vpos):
+        self.vpos = vpos
+        self.rect = self.rect.fit(self.core.rects[vpos][1])
+        
+    def Place (self, vpos):
         self.placed = True
-        self.moveto = [0,0]
         self.frame = 0
         self.image = self.frames[0]
         
         self.rect = self.image.get_rect()
-        x -= (self.rect.topright[0]/2)
-        y -= (self.rect.bottomright[1]/2)
-        self.rect = self.rect.move((x,y))
+        self.DirectMove(vpos)
         self.clock = pygame.time.Clock()
         self.time = 0
     
@@ -74,25 +63,6 @@ class AnimatedSprite (pygame.sprite.Sprite):
             self.rect = self.image.get_rect().move(self.rect.topleft)
             self.colorkey = self.image.get_at((0,self.image.get_height()-1))
             self.image.set_colorkey(self.colorkey)
-        if any(self.moveto):
-            moveto = [0,0]
-            for count,mt in enumerate(self.moveto):
-                if mt < 0:
-                    self.moveto[count] += self.speed
-                    if self.moveto[count] > 0:
-                        self.moveto[count] = 0
-                    moveto[count] = -self.speed
-                elif mt > 0:
-                    self.moveto[count] -= self.speed
-                    if self.moveto[count] < 0:
-                        self.moveto[count] = 0
-                    moveto[count] = self.speed
-                    
-            if any(moveto):
-                newrect = self.rect.move(moveto)
-                collidepoints = (newrect.topright,newrect.topleft,newrect.bottomright,newrect.bottomleft)
-                if all(map(lambda p: self.core.playingarea.collidepoint(p), collidepoints)):
-                    self.rect = newrect
         pygame.event.pump()
         
 
